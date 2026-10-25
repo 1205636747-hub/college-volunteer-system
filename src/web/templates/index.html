@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高考志愿推荐填报系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-left: 30px;
+        }
+
+        .nav-item a {
+            text-decoration: none;
+            color: #333;
+            font-size: 1.1rem;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .nav-item.active a,
+        .nav-item a:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .hero {
+            padding: 80px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 180, 219, 0.4);
+        }
+
+        .features {
+            padding: 60px 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .statistics {
+            padding: 60px 20px;
+            background: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .chart-wrapper {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .chart-wrapper h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .chart {
+            height: 300px;
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px 20px;
+            text-align: center;
+            color: #666;
+            margin-top: 0;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .official-links-bar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .official-links-bar a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 6px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            transition: transform 0.2s;
+        }
+
+        .official-links-bar a:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 1024px) {
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🎓</span>
+                <span class="brand-text">高考志愿推荐系统</span>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item active"><a href="/">首页</a></li>
+                <li class="nav-item"><a href="/recommend">智能推荐</a></li>
+                <li class="nav-item"><a href="/query">数据查询</a></li>
+                <li class="nav-item"><a href="/analysis">数据分析</a></li>
+                <li class="nav-item"><a href="/ai-assistant">🤖 AI助手</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主横幅 -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">科学填报志愿，规划美好未来</h1>
+            <p class="hero-subtitle">基于大数据与机器学习的高考志愿智能推荐系统</p>
+            <div class="hero-buttons">
+                <a href="/recommend" class="btn btn-primary">🎯 开始推荐</a>
+                <a href="/query" class="btn btn-secondary">🔍 数据查询</a>
+                <a href="/analysis" class="btn btn-secondary">📊 查看数据</a>
+                <a href="/ai-assistant" class="btn btn-ai">🤖 AI助手</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能介绍 -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">系统功能</h2>
+            <div class="feature-grid">
+                <a href="/recommend" class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>智能推荐</h3>
+                    <p>输入分数和排位，获取冲、稳、保志愿方案</p>
+                </a>
+                <a href="/query" class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>数据查询</h3>
+                    <p>按院校、专业、分数段查询历年招生数据</p>
+                </a>
+                <a href="/analysis" class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>数据分析</h3>
+                    <p>可视化展示历年录取数据和趋势</p>
+                </a>
+                <a href="/ai-assistant" class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI助手</h3>
+                    <p>智能对话式志愿填报咨询</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 数据统计 -->
+    <section class="statistics">
+        <div class="container">
+            <h2 class="section-title">数据概况</h2>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-colleges">-</div>
+                    <div class="stat-label">覆盖院校</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-majors">-</div>
+                    <div class="stat-label">专业数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-score">-</div>
+                    <div class="stat-label">平均录取分</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-employment">-</div>
+                    <div class="stat-label">平均就业率</div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h3>院校评级分布</h3>
+                    <div id="rating-chart" class="chart"></div>
+                </div>
+                <div class="chart-wrapper">
+                    <h3>分数段分布</h3>
+                    <div id="score-chart" class="chart"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 官方链接栏 -->
+    <div class="official-links-bar">
+        <span style="color:#666;font-size:0.85rem;margin-right:10px;">📋 官方信息查询：</span>
+        <a href="https://www.eeagd.edu.cn/xkcx2024/" target="_blank" rel="noopener noreferrer">选科要求查询</a>
+        <a href="https://eea.gd.gov.cn" target="_blank" rel="noopener noreferrer" style="background:white;color:#667eea;border:1px solid #667eea;">广东省教育考试院官网</a>
+        <span style="color:#999;font-size:0.75rem;margin-left:10px;">* 以上链接均以新窗口打开</span>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 高考志愿推荐填报系统 | 数据科学与大数据技术专业毕业设计</p>
+            <p style="font-size: 0.8rem; color: #999; margin-top: 8px; line-height: 1.6;">
+                ⚠️ 免责声明：本系统为毕业设计作品，仅供学习参考。所有招生计划、选科要求、录取分数等信息均以广东省教育考试院（<a href="https://eea.gd.gov.cn" target="_blank" rel="noopener noreferrer">eea.gd.gov.cn</a>）官方发布为准。本系统与官方机构无任何关联，不承担因信息差异导致的任何责任。
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        fetch('/api/statistics')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-colleges').textContent = data.total_colleges || 0;
+                document.getElementById('total-majors').textContent = data.total_majors || 0;
+                document.getElementById('avg-score').textContent = (data.avg_score_mean || 0) + '分';
+                document.getElementById('avg-employment').textContent = (data.employment_rate_mean || 0).toFixed(1) + '%';
+
+                if (data.rating_distribution) {
+                    drawRatingChart(data.rating_distribution);
+                }
+                if (data.score_distribution) {
+                    drawScoreChart(data.score_distribution);
+                }
+            })
+            .catch(err => console.error('加载统计数据失败:', err));
+
+        function drawRatingChart(data) {
+            const chart = echarts.init(document.getElementById('rating-chart'));
+            chart.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { orient: 'vertical', left: 'left' },
+                series: [{
+                    type: 'pie',
+                    radius: '60%',
+                    data: Object.entries(data).map(([name, value]) => ({ name, value })),
+                    emphasis: { scale: true }
+                }]
+            });
+        }
+
+        function drawScoreChart(data) {
+            const chart = echarts.init(document.getElementById('score-chart'));
+            chart.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: {
+                    type: 'category',
+                    data: Object.keys(data),
+                    axisLabel: { rotate: 45 }
+                },
+                yAxis: { type: 'value', name: '院校数量' },
+                series: [{
+                    type: 'bar',
+                    data: Object.values(data),
+                    itemStyle: { color: '#667eea' }
+                }]
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            const ratingChart = echarts.getInstanceByDom(document.getElementById('rating-chart'));
+            const scoreChart = echarts.getInstanceByDom(document.getElementById('score-chart'));
+            if (ratingChart) ratingChart.resize();
+            if (scoreChart) scoreChart.resize();
+        });
+    </script>
+</body>
+</html>

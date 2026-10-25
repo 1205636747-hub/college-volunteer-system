@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 - 高考志愿推荐系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🎓</span>
+                <span class="brand-text">高考志愿推荐系统</span>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/">首页</a></li>
+                <li class="nav-item"><a href="/recommend">智能推荐</a></li>
+                <li class="nav-item"><a href="/query">数据查询</a></li>
+                <li class="nav-item"><a href="/analysis">数据分析</a></li>
+                <li class="nav-item active"><a href="/ai-assistant">🤖 AI助手</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="ai-container">
+        <div class="context-panel">
+            <h3>📝 考生信息</h3>
+            <form class="context-form">
+                <div class="form-group">
+                    <label>🎯 高考分数</label>
+                    <input type="number" id="ctx-score" placeholder="如: 580" min="0" max="750">
+                </div>
+                <div class="form-group">
+                    <label>📊 全省排位</label>
+                    <input type="number" id="ctx-rank" placeholder="如: 20000" min="1">
+                </div>
+                <div class="form-group">
+                    <label>📍 所在省份</label>
+                    <select id="ctx-province">
+                        <option value="广东">广东省</option>
+                        <option value="北京">北京市</option>
+                        <option value="上海">上海市</option>
+                        <option value="江苏">江苏省</option>
+                        <option value="浙江">浙江省</option>
+                    </select>
+                </div>
+            </form>
+            <p style="color:#888;font-size:0.9rem;margin-top:15px;padding:12px;background:#f8f9fa;border-radius:10px;">
+                💡 <strong>温馨提示</strong><br>填写信息后，AI将提供个性化建议。
+            </p>
+
+            <!-- 官方查询入口 -->
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 3px solid #4caf50;">
+                <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #333;">📋 官方信息查询</h4>
+                <a href="https://www.eeagd.edu.cn/xkcx2024/"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display: block; padding: 8px 12px; margin-bottom: 6px; background: white; color: #667eea; text-decoration: none; border-radius: 8px; font-size: 0.85rem; border: 1px solid #e0e0e0;">
+                    🔗 查询官方选科要求
+                </a>
+                <a href="https://eea.gd.gov.cn"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display: block; padding: 8px 12px; background: white; color: #667eea; text-decoration: none; border-radius: 8px; font-size: 0.85rem; border: 1px solid #e0e0e0;">
+                    🏛️ 访问广东省教育考试院官网
+                </a>
+                <p style="margin: 8px 0 0 0; font-size: 0.7rem; color: #999;">
+                    * 以上链接均以新窗口打开，信息以官方为准
+                </p>
+            </div>
+        </div>
+
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h3>🤖 豆包AI助手</h3>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="color:#4caf50;font-size:0.85rem;">● 在线</span>
+                    <button class="clear-btn" id="clear-history" style="background:none;border:1px solid #ddd;padding:6px 12px;border-radius:20px;cursor:pointer;">🗑️ 清空</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p><strong>👋 您好！我是AI志愿助手！</strong></p>
+                        <p>我可以帮您：</p>
+                        <ul>
+                            <li>📊 根据分数和排位推荐冲稳保院校</li>
+                            <li>🎯 解释志愿填报的冲稳保策略</li>
+                            <li>📚 分析各专业的就业前景</li>
+                            <li>🔍 介绍院校特色和录取情况</li>
+                        </ul>
+                        <p>请告诉我您的分数和排位，或者直接问我问题！</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-questions">
+                <button class="quick-btn" data-question="我考了600分，排位15000，能上什么大学？">📊 600分能上什么大学？</button>
+                <button class="quick-btn" data-question="什么是冲稳保策略？">🎯 什么是冲稳保策略？</button>
+                <button class="quick-btn" data-question="计算机专业怎么样？">💻 计算机专业前景</button>
+                <button class="quick-btn" data-question="中山大学怎么样？">🏫 中山大学介绍</button>
+            </div>
+
+            <div class="chat-input-area">
+                <textarea class="chat-input" id="chat-input" placeholder="输入您的问题... (按Enter发送)" rows="1"></textarea>
+                <button class="send-btn" id="send-btn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer" style="background:rgba(255,255,255,0.95);padding:25px 20px;text-align:center;color:#666;">
+        <div class="container" style="max-width:1200px;margin:0 auto;">
+            <p>&copy; 2026 高考志愿推荐填报系统 | 数据科学与大数据技术专业毕业设计</p>
+            <p style="font-size: 0.8rem; color: #999; margin-top: 8px; line-height: 1.6;">
+                ⚠️ 免责声明：本系统为毕业设计作品，仅供学习参考。所有招生计划、选科要求、录取分数等信息均以广东省教育考试院（<a href="https://eea.gd.gov.cn" target="_blank" rel="noopener noreferrer" style="color:#667eea;">eea.gd.gov.cn</a>）官方发布为准。本系统与官方机构无任何关联，不承担因信息差异导致的任何责任。
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        let isStreaming = false;
+
+        function getContext() {
+            return {
+                score: parseInt(document.getElementById('ctx-score').value) || null,
+                rank: parseInt(document.getElementById('ctx-rank').value) || null,
+                province: document.getElementById('ctx-province').value
+            };
+        }
+
+        function addMessage(role, content) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.innerHTML = `
+                <div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+                <div class="message-content">${content.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return div;
+        }
+
+        async function sendMessage(message) {
+            if (!message || isStreaming) return;
+            addMessage('user', message);
+            isStreaming = true;
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, context: getContext() })
+                });
+                const data = await response.json();
+                addMessage('assistant', data.response || '抱歉，请稍后再试');
+            } catch (error) {
+                addMessage('assistant', '网络错误，请稍后重试');
+            } finally {
+                isStreaming = false;
+                document.getElementById('send-btn').disabled = false;
+            }
+        }
+
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (msg) { input.value = ''; sendMessage(msg); }
+        });
+
+        document.getElementById('chat-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('send-btn').click();
+            }
+        });
+
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => sendMessage(btn.dataset.question));
+        });
+
+        document.getElementById('clear-history').addEventListener('click', () => {
+            if (confirm('确定要清空对话历史吗？')) {
+                fetch('/api/ai/clear', { method: 'POST' })
+                    .then(() => {
+                        document.getElementById('chat-messages').innerHTML = `
+                            <div class="message assistant">
+                                <div class="message-avatar">🤖</div>
+                                <div class="message-content"><p>对话历史已清空，有什么我可以帮您的吗？</p></div>
+                            </div>`;
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

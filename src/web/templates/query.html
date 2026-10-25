@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据查询 - 高考志愿推荐系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .query-wrapper {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .query-title {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .query-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .official-panel {
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef0ff 100%);
+            border-left: 4px solid #667eea;
+        }
+
+        .official-panel h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .official-panel p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .official-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .official-link {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: transform 0.2s;
+        }
+
+        .official-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .official-link.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .official-link.secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .query-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .query-form .form-group {
+            flex: 1;
+            min-width: 150px;
+            margin-bottom: 0;
+        }
+
+        .query-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        .query-form input,
+        .query-form select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .query-form input:focus,
+        .query-form select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .score-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .score-range input {
+            width: 110px;
+            min-width: 90px;
+            padding: 10px 12px;
+        }
+
+        .score-range span {
+            font-size: 1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .query-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .query-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .query-btn.reset {
+            background: #666;
+        }
+
+        .result-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .result-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .result-table th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-table tr:hover {
+            background: #f5f5ff;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .page-btn {
+            padding: 8px 14px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .detail-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .detail-item label {
+            font-size: 0.8rem;
+            color: #888;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .detail-item span {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        .disclaimer {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .disclaimer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .query-form {
+                flex-direction: column;
+            }
+            .official-links {
+                flex-direction: column;
+            }
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .score-range {
+                flex-wrap: wrap;
+            }
+            .score-range input {
+                width: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🎓</span>
+                <span class="brand-text">高考志愿推荐系统</span>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/">首页</a></li>
+                <li class="nav-item"><a href="/recommend">智能推荐</a></li>
+                <li class="nav-item active"><a href="/query">数据查询</a></li>
+                <li class="nav-item"><a href="/analysis">数据分析</a></li>
+                <li class="nav-item"><a href="/ai-assistant">🤖 AI助手</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="query-wrapper">
+        <h1 class="query-title">🔍 数据查询</h1>
+
+        <!-- 官方查询入口（保持原样） -->
+        <div class="query-panel official-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3>📋 官方选科要求查询</h3>
+                    <p>直接访问广东省教育考试院官方系统，查询各院校专业组的准确选考科目要求</p>
+                </div>
+                <div class="official-links">
+                    <a href="https://www.eeagd.edu.cn/xkcx2024/"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="official-link primary"
+                       title="跳转至广东省教育考试院官方选科查询系统（新窗口打开）">
+                        🔗 选科要求查询 →
+                    </a>
+                    <a href="https://eea.gd.gov.cn"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="official-link secondary"
+                       title="跳转至广东省教育考试院官网（新窗口打开）">
+                        🏛️ 考试院官网 →
+                    </a>
+                </div>
+            </div>
+            <p class="disclaimer">
+                ⚠️ 免责声明：以上链接跳转至广东省教育考试院官方网站。本系统与官方机构无任何关联，所有选科要求、招生计划信息均以官方发布为准。本系统仅供参考，不承担因信息差异导致的填报风险。
+            </p>
+        </div>
+
+        <!-- 查询面板 -->
+        <div class="query-panel">
+            <form class="query-form" id="query-form">
+                <div class="form-group">
+                    <label>查询类型</label>
+                    <select id="query-type">
+                        <option value="college">按院校名称</option>
+                        <option value="major">按专业名称</option>
+                        <option value="score">按分数段</option>
+                        <option value="plan">招生计划查询</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="keyword-group">
+                    <label id="keyword-label">关键词</label>
+                    <input type="text" id="query-keyword" placeholder="输入院校名称...">
+                    <select id="query-major-select" style="display:none;">
+                        <option value="">-- 请选择专业/专业组 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="score-range-group" style="display:none;">
+                    <label>分数范围</label>
+                    <div class="score-range">
+                        <input type="number" id="score-min" placeholder="最低分" min="0" max="750">
+                        <span>—</span>
+                        <input type="number" id="score-max" placeholder="最高分" min="0" max="750">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>年份</label>
+                    <select id="query-year">
+                        <option value="">全部年份</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="query-btn">🔍 查询</button>
+                <button type="button" class="query-btn reset" onclick="resetQuery()">🔄 重置</button>
+            </form>
+        </div>
+
+        <!-- 结果面板 -->
+        <div class="query-panel" id="result-panel">
+            <div class="result-info">
+                <span id="result-count">请输入查询条件开始搜索</span>
+                <span id="page-info"></span>
+            </div>
+
+            <div class="result-table-wrapper">
+                <table class="result-table" id="result-table">
+                    <thead>
+                        <tr>
+                            <th>年份</th>
+                            <th>院校名称</th>
+                            <th>专业/专业组</th>
+                            <th>投档最低分</th>
+                            <th>最低排位</th>
+                            <th>计划数</th>
+                            <th>投档人数</th>
+                            <th>类别</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="9" class="empty-state">请输入查询条件开始搜索</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- 院校详情弹窗 -->
+    <div class="detail-modal" id="detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="detail-title">院校详情</h3>
+                <button class="modal-close" onclick="closeDetail()">&times;</button>
+            </div>
+            <div class="detail-grid" id="detail-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadYears();
+            loadMajors();
+            initQueryTypeSwitch();
+        });
+
+        function loadYears() {
+            fetch('/api/query/years')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('query-year');
+                    // 按年份降序排列
+                    const sortedYears = [...data.years].sort((a, b) => b - a);
+                    sortedYears.forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = year + '年';
+                        select.appendChild(option);
+                    });
+                })
+                .catch(() => {
+                    const select = document.getElementById('query-year');
+                    [2025, 2024, 2023, 2022].forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = year;
+                        option.textContent = year + '年';
+                        select.appendChild(option);
+                    });
+                });
+        }
+
+        function loadMajors() {
+            // 通过API获取所有专业列表
+            fetch('/api/query/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'plan', keyword: '大学', page: 1, page_size: 100 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.records.length > 0) {
+                    const majors = [...new Set(data.records.map(r => r.major_name).filter(Boolean))].sort();
+                    populateMajorSelect(majors);
+                }
+            })
+            .catch(() => {
+                const defaultMajors = [
+                    '计算机类', '电子信息类', '机械类', '土木类', '经管类', '医学类', '师范类'
+                ];
+                populateMajorSelect(defaultMajors);
+            });
+        }
+
+        function populateMajorSelect(majors) {
+            const select = document.getElementById('query-major-select');
+            select.innerHTML = '<option value="">-- 请选择专业/专业组 --</option>';
+            majors.forEach(major => {
+                const option = document.createElement('option');
+                option.value = major;
+                option.textContent = major;
+                select.appendChild(option);
+            });
+        }
+
+        function initQueryTypeSwitch() {
+            document.getElementById('query-type').addEventListener('change', function() {
+                const type = this.value;
+                const keywordGroup = document.getElementById('keyword-group');
+                const scoreRangeGroup = document.getElementById('score-range-group');
+                const keywordInput = document.getElementById('query-keyword');
+                const majorSelect = document.getElementById('query-major-select');
+                const keywordLabel = document.getElementById('keyword-label');
+
+                keywordInput.style.display = 'none';
+                majorSelect.style.display = 'none';
+                scoreRangeGroup.style.display = 'none';
+                keywordGroup.style.display = 'block';
+
+                if (type === 'score') {
+                    keywordGroup.style.display = 'none';
+                    scoreRangeGroup.style.display = 'block';
+                } else if (type === 'major') {
+                    keywordLabel.textContent = '选择专业';
+                    majorSelect.style.display = 'block';
+                } else {
+                    keywordLabel.textContent = '关键词';
+                    keywordInput.style.display = 'block';
+                    const placeholders = {
+                        'college': '输入院校名称（如：中山大学）...',
+                        'plan': '输入院校名称查看招生计划...'
+                    };
+                    keywordInput.placeholder = placeholders[type] || '输入关键词...';
+                }
+            });
+        }
+
+        function resetQuery() {
+            document.getElementById('query-keyword').value = '';
+            document.getElementById('query-major-select').value = '';
+            document.getElementById('score-min').value = '';
+            document.getElementById('score-max').value = '';
+            document.getElementById('query-year').value = '';
+            document.getElementById('query-type').value = 'college';
+            document.getElementById('query-keyword').style.display = 'block';
+            document.getElementById('query-major-select').style.display = 'none';
+            document.getElementById('keyword-group').style.display = 'block';
+            document.getElementById('score-range-group').style.display = 'none';
+            document.getElementById('keyword-label').textContent = '关键词';
+            currentPage = 1;
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="9" class="empty-state">请输入查询条件开始搜索</td></tr>';
+            document.getElementById('result-count').textContent = '请输入查询条件开始搜索';
+            document.getElementById('page-info').textContent = '';
+            document.getElementById('pagination').innerHTML = '';
+        }
+
+        document.getElementById('query-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentPage = 1;
+            executeQuery();
+        });
+
+        function executeQuery() {
+            const type = document.getElementById('query-type').value;
+            let keyword = document.getElementById('query-keyword').value.trim();
+            const majorSelect = document.getElementById('query-major-select');
+            const scoreMin = document.getElementById('score-min').value;
+            const scoreMax = document.getElementById('score-max').value;
+            const year = document.getElementById('query-year').value;
+
+            if (type === 'major') {
+                keyword = majorSelect.value;
+            }
+
+            if (type !== 'score' && !keyword) {
+                alert(type === 'major' ? '请选择专业/专业组' : '请输入查询关键词');
+                return;
+            }
+
+            const body = {
+                type: type,
+                keyword: keyword,
+                year: year || null,
+                page: currentPage,
+                page_size: 20
+            };
+
+            if (type === 'score') {
+                body.score_min = scoreMin || null;
+                body.score_max = scoreMax || null;
+            }
+
+            fetch('/api/query/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderResults(data);
+                } else {
+                    alert('查询失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                console.error('查询失败:', err);
+                alert('网络错误，请稍后重试');
+            });
+        }
+
+        function renderResults(data) {
+            const tbody = document.getElementById('table-body');
+            totalPages = data.total_pages;
+
+            document.getElementById('result-count').textContent = `共找到 ${data.total} 条记录`;
+            document.getElementById('page-info').textContent = data.total > 0 ? `第 ${data.page}/${data.total_pages} 页` : '';
+
+            if (data.records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">未找到匹配的记录，请尝试其他查询条件</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            // 按年份降序排列（2025→2022）
+            const sortedRecords = [...data.records].sort((a, b) => b.year - a.year);
+
+            tbody.innerHTML = sortedRecords.map(record => `
+                <tr>
+                    <td><strong>${record.year}</strong></td>
+                    <td>${record.college_name}</td>
+                    <td>${record.major_name}</td>
+                    <td>${record.min_score}</td>
+                    <td>${record.min_rank.toLocaleString()}</td>
+                    <td>${record.plan_count || '-'}</td>
+                    <td>${record.admitted_count || '-'}</td>
+                    <td>${record.category}</td>
+                    <td>
+                        <button class="page-btn" onclick="showDetail('${record.college_name.replace(/'/g, "\\'")}')" style="padding:4px 10px;font-size:0.8rem;">详情</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination(data);
+        }
+
+        function renderPagination(data) {
+            const pagination = document.getElementById('pagination');
+            if (data.total_pages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            html += `<button class="page-btn" onclick="goPage(${data.page - 1})" ${data.page <= 1 ? 'disabled' : ''}>上一页</button>`;
+
+            const start = Math.max(1, data.page - 2);
+            const end = Math.min(data.total_pages, data.page + 2);
+
+            if (start > 1) {
+                html += `<button class="page-btn" onclick="goPage(1)">1</button>`;
+                if (start > 2) html += `<span style="padding: 8px;">...</span>`;
+            }
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="page-btn ${i === data.page ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+            }
+
+            if (end < data.total_pages) {
+                if (end < data.total_pages - 1) html += `<span style="padding: 8px;">...</span>`;
+                html += `<button class="page-btn" onclick="goPage(${data.total_pages})">${data.total_pages}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goPage(${data.page + 1})" ${data.page >= data.total_pages ? 'disabled' : ''}>下一页</button>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function goPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            executeQuery();
+            document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showDetail(collegeName) {
+            fetch('/api/query/college-detail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ college_name: collegeName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderDetail(data.info);
+                } else {
+                    alert(data.error || '获取详情失败');
+                }
+            })
+            .catch(() => alert('网络错误，请稍后重试'));
+        }
+
+        function renderDetail(info) {
+            document.getElementById('detail-title').textContent = info.college_name;
+
+            let html = `
+                <div class="detail-item"><label>院校代码</label><span>${info.college_code || '暂无'}</span></div>
+                <div class="detail-item"><label>综合评级</label><span>${info.rating || 'B'}</span></div>
+                <div class="detail-item"><label>平均就业率</label><span>${info.employment_rate ? info.employment_rate.toFixed(1) + '%' : '暂无'}</span></div>
+                <div class="detail-item"><label>平均薪资</label><span>${info.avg_salary ? info.avg_salary.toLocaleString() + '元/月' : '暂无'}</span></div>
+                <div class="detail-item"><label>包含专业组</label><span>${(info.majors || []).length} 个</span></div>
+                <div class="detail-item"><label>专业列表</label><span>${(info.majors || []).join('、') || '暂无'}</span></div>
+            `;
+
+            document.getElementById('detail-content').innerHTML = html;
+            document.getElementById('detail-modal').classList.add('show');
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-modal').classList.remove('show');
+        }
+
+        document.getElementById('detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeDetail();
+        });
+    </script>
+</body>
+</html>

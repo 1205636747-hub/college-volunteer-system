@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能推荐 - 高考志愿推荐系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 导出按钮样式 */
+        .export-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .export-btn {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: transform 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 233, 123, 0.3);
+        }
+
+        .export-btn.csv {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .export-btn.csv:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .export-btn.excel {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .export-btn.excel:hover {
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+        }
+
+        .export-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .export-tip {
+            font-size: 0.75rem;
+            color: #999;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">🎓</span>
+                <span class="brand-text">高考志愿推荐系统</span>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/">首页</a></li>
+                <li class="nav-item active"><a href="/recommend">智能推荐</a></li>
+                <li class="nav-item"><a href="/query">数据查询</a></li>
+                <li class="nav-item"><a href="/analysis">数据分析</a></li>
+                <li class="nav-item"><a href="/ai-assistant">🤖 AI助手</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 推荐页面内容 -->
+    <div class="recommend-container">
+        <!-- 输入面板 -->
+        <div class="input-panel">
+            <h2>📝 考生信息填写</h2>
+
+            <form id="recommend-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>高考分数</label>
+                        <input type="number" id="score" name="score" placeholder="如: 580" required min="0" max="750">
+                    </div>
+                    <div class="form-group">
+                        <label>全省排位</label>
+                        <input type="number" id="rank" name="rank" placeholder="如: 20000" required min="1">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>所在省份</label>
+                        <select id="province" name="province">
+                            <option value="广东">广东省</option>
+                            <option value="北京">北京市</option>
+                            <option value="上海">上海市</option>
+                            <option value="江苏">江苏省</option>
+                            <option value="浙江">浙江省</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>推荐策略</label>
+                        <select id="strategy" name="strategy">
+                            <option value="balanced">均衡策略</option>
+                            <option value="aggressive">激进策略（多冲）</option>
+                            <option value="conservative">保守策略（多保）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>选考科目（可多选）</label>
+                    <div class="subject-checkbox-group" id="subject-group"></div>
+                    <!-- 官方选科查询入口 -->
+                    <div style="margin-top: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea;">
+                        <p style="margin: 0 0 6px 0; font-size: 0.85rem; color: #555;">
+                            📋 不确定选科要求？可前往官方系统查询
+                        </p>
+                        <a href="https://www.eeagd.edu.cn"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           style="display: inline-block; padding: 6px 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 20px; font-size: 0.85rem; transition: transform 0.2s;"
+                           onmouseover="this.style.transform='translateY(-2px)'"
+                           onmouseout="this.style.transform='translateY(0)'"
+                           title="跳转至广东省教育考试院官方选科查询系统（新窗口打开）">
+                            🔗 查询官方选科要求 →
+                        </a>
+                        <p style="margin: 6px 0 0 0; font-size: 0.75rem; color: #999;">
+                            * 本链接跳转至广东省教育考试院官方网站，信息以官方为准
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>偏好设置</label>
+                    <div class="preference-group">
+                        <label class="radio-label">
+                            <input type="radio" name="preference" value="balanced" checked> 综合平衡
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="preference" value="academic"> 偏重学术
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="preference" value="employment"> 偏重就业
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+                    开始智能推荐
+                </button>
+            </form>
+        </div>
+
+        <!-- 结果面板 -->
+        <div class="result-panel" id="result-panel">
+            <div class="result-header">
+                <h2>📋 推荐结果</h2>
+                <div class="result-stats" id="result-stats"></div>
+            </div>
+
+            <div class="result-tabs">
+                <button class="tab-btn active" data-tab="rush">🚀 冲一冲</button>
+                <button class="tab-btn" data-tab="stable">⚖️ 稳一稳</button>
+                <button class="tab-btn" data-tab="safe">🛡️ 保一保</button>
+                <button class="tab-btn" data-tab="all">📊 全部结果</button>
+            </div>
+
+            <div class="result-content">
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>正在分析数据，生成推荐方案...</p>
+                </div>
+
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>填写左侧信息，开始获取推荐方案</p>
+                </div>
+
+                <div class="result-table-container" id="result-table-container" style="display: none;">
+                    <table class="result-table" id="result-table">
+                        <thead>
+                            <tr>
+                                <th>院校</th>
+                                <th>专业</th>
+                                <th>平均分</th>
+                                <th>录取概率</th>
+                                <th>就业率</th>
+                                <th>平均薪资</th>
+                                <th>评级</th>
+                                <th>类型</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+
+                    <!-- 导出功能栏 -->
+                    <div class="export-bar" id="export-bar" style="display: none;">
+                        <button class="export-btn csv" id="export-csv-btn" onclick="exportResults('csv')" title="导出为CSV格式，可用Excel打开">
+                            📄 导出CSV
+                        </button>
+                        <button class="export-btn excel" id="export-excel-btn" onclick="exportResults('excel')" title="导出为Excel格式">
+                            📊 导出Excel
+                        </button>
+                        <span class="export-tip">💡 点击按钮选择下载格式和保存位置</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 官方链接栏 -->
+    <div class="official-links-bar" style="background: rgba(255,255,255,0.9); padding: 15px 20px; text-align: center; border-top: 1px solid #e0e0e0; max-width: 1400px; margin: 0 auto;">
+        <span style="color:#666;font-size:0.85rem;margin-right:10px;">📋 官方信息查询：</span>
+        <a href="https://www.eeagd.edu.cn" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:0 10px;padding:6px 16px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;text-decoration:none;border-radius:20px;font-size:0.85rem;">选科要求查询</a>
+        <a href="https://eea.gd.gov.cn" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:0 10px;padding:6px 16px;background:white;color:#667eea;text-decoration:none;border-radius:20px;font-size:0.85rem;border:1px solid #667eea;">广东省教育考试院官网</a>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer" style="background:rgba(255,255,255,0.95);padding:30px 20px;text-align:center;color:#666;margin-top:0;">
+        <div class="container">
+            <p>&copy; 2026 高考志愿推荐填报系统 | 数据科学与大数据技术专业毕业设计</p>
+            <p style="font-size: 0.8rem; color: #999; margin-top: 8px; line-height: 1.6;">
+                ⚠️ 免责声明：本系统为毕业设计作品，仅供学习参考。所有招生计划、选科要求、录取分数等信息均以广东省教育考试院（<a href="https://eea.gd.gov.cn" target="_blank" rel="noopener noreferrer" style="color:#667eea;">eea.gd.gov.cn</a>）官方发布为准。本系统与官方机构无任何关联，不承担因信息差异导致的任何责任。
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        let currentResults = {};
+        let currentTab = 'rush';
+
+        fetch('/api/subjects')
+            .then(response => response.json())
+            .then(data => {
+                const group = document.getElementById('subject-group');
+                for (const [key, value] of Object.entries(data.subjects)) {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-label';
+                    label.innerHTML = `
+                        <input type="checkbox" name="subjects" value="${value}">
+                        ${value}
+                    `;
+                    group.appendChild(label);
+                }
+            });
+
+        document.getElementById('recommend-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const score = document.getElementById('score').value;
+            const rank = document.getElementById('rank').value;
+            const preference = document.querySelector('input[name="preference"]:checked').value;
+
+            const subjects = [];
+            document.querySelectorAll('input[name="subjects"]:checked').forEach(cb => {
+                subjects.push(cb.value);
+            });
+
+            if (!score || !rank) {
+                alert('请填写分数和排位');
+                return;
+            }
+
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('result-table-container').style.display = 'none';
+            document.getElementById('export-bar').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+
+            try {
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ score, rank, subjects, preference })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentResults = data.recommendations;
+                    displayStats(data.stats);
+                    showTabResults('rush');
+                    document.getElementById('result-table-container').style.display = 'block';
+                    document.getElementById('export-bar').style.display = 'flex';
+                } else {
+                    alert('推荐失败: ' + (data.error || '未知错误'));
+                    document.getElementById('empty-state').style.display = 'block';
+                }
+            } catch (error) {
+                alert('请求失败: ' + error.message);
+                document.getElementById('empty-state').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+            }
+        });
+
+        function displayStats(stats) {
+            document.getElementById('result-stats').innerHTML = `
+                <span class="stat-badge rush">冲: ${stats.rush_count || 0}</span>
+                <span class="stat-badge stable">稳: ${stats.stable_count || 0}</span>
+                <span class="stat-badge safe">保: ${stats.safe_count || 0}</span>
+            `;
+        }
+
+        function showTabResults(tab) {
+            currentTab = tab;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === tab) btn.classList.add('active');
+            });
+
+            let results = [];
+            if (tab === 'all') {
+                results = [
+                    ...(currentResults.rush || []).map(r => ({...r, type: '冲'})),
+                    ...(currentResults.stable || []).map(r => ({...r, type: '稳'})),
+                    ...(currentResults.safe || []).map(r => ({...r, type: '保'}))
+                ];
+            } else {
+                const tabMap = { 'rush': '冲', 'stable': '稳', 'safe': '保' };
+                results = (currentResults[tab] || []).map(r => ({...r, type: tabMap[tab]}));
+            }
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">暂无推荐结果</td></tr>';
+                return;
+            }
+
+            results.forEach(item => {
+                const row = document.createElement('tr');
+                const probClass = item.probability >= 80 ? 'prob-high' : (item.probability >= 60 ? 'prob-medium' : 'prob-low');
+
+                row.innerHTML = `
+                    <td>${item.college || ''}</td>
+                    <td>${item.major || ''}</td>
+                    <td>${item.avg_score || 0}</td>
+                    <td><span class="probability ${probClass}">${item.probability || 0}%</span></td>
+                    <td>${item.employment_rate || 90}%</td>
+                    <td>${(item.avg_salary || 8000).toLocaleString()}</td>
+                    <td>${item.rating || 'B'}</td>
+                    <td><span class="type-badge type-${item.type}">${item.type}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                if (currentResults && (currentResults[tab] || tab === 'all')) {
+                    showTabResults(tab);
+                }
+            });
+        });
+
+        // ==================== 导出功能 ====================
+        function exportResults(format) {
+            // 获取当前显示的志愿列表
+            let results = [];
+            const tabMap = { 'rush': '冲', 'stable': '稳', 'safe': '保' };
+
+            // 合并所有结果
+            for (const [key, items] of Object.entries(currentResults)) {
+                if (Array.isArray(items)) {
+                    results.push(...items.map(r => ({...r, type: tabMap[key] || key})));
+                }
+            }
+
+            if (results.length === 0) {
+                alert('暂无推荐结果可导出');
+                return;
+            }
+
+            // 获取考生信息
+            const score = document.getElementById('score').value || '未填写';
+            const rank = document.getElementById('rank').value || '未填写';
+            const province = document.getElementById('province').value || '';
+            const strategy = document.getElementById('strategy').value || '';
+            const strategyMap = { 'balanced': '均衡策略', 'aggressive': '激进策略', 'conservative': '保守策略' };
+            const preference = document.querySelector('input[name="preference"]:checked');
+            const preferenceMap = { 'balanced': '综合平衡', 'academic': '偏重学术', 'employment': '偏重就业' };
+            const prefText = preference ? preferenceMap[preference.value] || preference.value : '综合平衡';
+
+            if (format === 'csv') {
+                exportAsCSV(results, score, rank, province, strategyMap[strategy], prefText);
+            } else if (format === 'excel') {
+                exportAsExcel(results, score, rank, province, strategyMap[strategy], prefText);
+            }
+        }
+
+        function exportAsCSV(results, score, rank, province, strategy, preference) {
+            // 构建CSV内容
+            let csvContent = '\uFEFF'; // BOM for UTF-8
+
+            // 添加考生信息头
+            csvContent += '高考志愿推荐结果\n';
+            csvContent += `考生分数,${score}分\n`;
+            csvContent += `全省排位,第${rank}名\n`;
+            csvContent += `所在省份,${province}\n`;
+            csvContent += `推荐策略,${strategy}\n`;
+            csvContent += `偏好设置,${preference}\n`;
+            csvContent += '\n';
+
+            // 添加表头
+            csvContent += '推荐类型,院校名称,专业,平均分,录取概率,就业率,平均薪资,评级\n';
+
+            // 添加数据行
+            results.forEach(item => {
+                const row = [
+                    item.type || '',
+                    item.college || '',
+                    item.major || '',
+                    item.avg_score || '',
+                    (item.probability || 0) + '%',
+                    (item.employment_rate || 0) + '%',
+                    item.avg_salary || '',
+                    item.rating || ''
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // 下载文件
+            const date = new Date().toISOString().slice(0, 10);
+            downloadFile(csvContent, `志愿推荐结果_${date}.csv`, 'text/csv;charset=utf-8');
+        }
+
+        function exportAsExcel(results, score, rank, province, strategy, preference) {
+            // 构建HTML表格（Excel可打开）
+            let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+            html += '<head><meta charset="UTF-8"></head><body>';
+            html += '<h2>高考志愿推荐结果</h2>';
+            html += '<table border="1">';
+
+            // 考生信息
+            html += `<tr><td><b>考生分数</b></td><td>${score}分</td></tr>`;
+            html += `<tr><td><b>全省排位</b></td><td>第${rank}名</td></tr>`;
+            html += `<tr><td><b>所在省份</b></td><td>${province}</td></tr>`;
+            html += `<tr><td><b>推荐策略</b></td><td>${strategy}</td></tr>`;
+            html += `<tr><td><b>偏好设置</b></td><td>${preference}</td></tr>`;
+            html += '</table><br>';
+
+            // 志愿表
+            html += '<table border="1">';
+            html += '<tr><th>推荐类型</th><th>院校名称</th><th>专业</th><th>平均分</th><th>录取概率</th><th>就业率</th><th>平均薪资</th><th>评级</th></tr>';
+
+            results.forEach(item => {
+                html += '<tr>';
+                html += `<td>${item.type || ''}</td>`;
+                html += `<td>${item.college || ''}</td>`;
+                html += `<td>${item.major || ''}</td>`;
+                html += `<td>${item.avg_score || ''}</td>`;
+                html += `<td>${(item.probability || 0) + '%'}</td>`;
+                html += `<td>${(item.employment_rate || 0) + '%'}</td>`;
+                html += `<td>${item.avg_salary || ''}</td>`;
+                html += `<td>${item.rating || ''}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</table></body></html>';
+
+            const date = new Date().toISOString().slice(0, 10);
+            downloadFile(html, `志愿推荐结果_${date}.xls`, 'application/vnd.ms-excel;charset=utf-8');
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            // 创建Blob并触发下载
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
